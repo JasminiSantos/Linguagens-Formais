@@ -3,8 +3,8 @@
 <p> Para  obter  os  pontos  relativos  a  este  trabalho,  você  deverá  fazer  um  programa,  usando  a 
 linguagem de programação Python, C++, C, que seja capaz de validar e executar programas escritos na 
 linguagem  proposta  a  seguir  emitindo  um  relatório  de  análise  léxica,  a  classificação  como  válida  ou 
-invalida para cada declaração da linguagem e o resultado do programa.   
-Descrição da linguagem </p>
+invalida para cada declaração da linguagem e o resultado do programa. </p>
+<p>Descrição da linguagem </p>
 <p>Identificadores: compostos apenas de letras minúsculas e números; </p>
 <p> Símbolos especiais: ?, ), (;  
 <p> Operações:  soma  (+),  subtração  (-),  multiplicação  (*),  divisão  (/),  seno  (sin),  cosseno  (cos), 

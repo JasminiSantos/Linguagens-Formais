@@ -1,15 +1,23 @@
 import math
-from MaquinaEstados import *
+from StateMachine import *
 
+
+numbers_vocabulary = ["1","2","3","4","5","6","7","8","9","0","."]
+operators_vocabulary = ["+","-","/","*","sin","cos","rot","exp"]
 tokens = []
 numbers = []
 operators = []
 special_symbols = []
 results = []
 identifiers = []
-variaveis = {}
-lexemas = []
+variables = {}
 expressions = ""
+
+def file_reader(filename):
+    file = open(filename, "r")
+    lines = file.read().split("\n")
+    file.close()
+    return [lines]
 
 def validate_tokens(tokens):
   for token in tokens:
@@ -23,57 +31,50 @@ def validate_tokens(tokens):
       results.append(token[1])
     if token[0] == "VARIAVEL":
       identifiers.append(token[1])
-      if token[1] in variaveis:
-        numbers.append(variaveis[token[1]])
-        results.remove(variaveis[token[1]])
+      if token[1] in variables:
+        numbers.append(variables[token[1]])
+        results.remove(variables[token[1]])
   calculate()
-
 
 def calculate():
   if (len(operators) == 0):
     results.append(numbers[0])
     numbers.pop(0)
-    armazenarVar()
+    set_variable()
 
   for operator in operators[::-1]:
     if operator == "+":
-      conta = float(numbers[0]) + float(numbers[1])
+      calculation = float(numbers[0]) + float(numbers[1])
       remove(2)
     elif operator == "-":
-      conta = float(numbers[0]) - float(numbers[1])
+      calculation = float(numbers[0]) - float(numbers[1])
       remove(2)
     elif operator == "*":
-      conta = float(numbers[0]) * float(numbers[1])
+      calculation = float(numbers[0]) * float(numbers[1])
       remove(2)
     elif operator == "/":
-      conta = float(numbers[0]) / float(numbers[1])
+      calculation = float(numbers[0]) / float(numbers[1])
       remove(2)
     elif operator == "exp":
-      conta = float(numbers[0])**float(numbers[1])
+      calculation = float(numbers[0])**float(numbers[1])
       remove(2)
     elif operator == "rot":
-      conta = float(numbers[0])**(1 / float(numbers[1]))
+      calculation = float(numbers[0])**(1 / float(numbers[1]))
       remove(2)
     elif operator == "sin":
-      conta = math.sin(float(math.radians(float(numbers[0]))))
+      calculation = math.sin(float(math.radians(float(numbers[0]))))
       remove(1)
     elif operator == "cos":
-      conta = math.cos(float(math.radians(float(numbers[0]))))
+      calculation = math.cos(float(math.radians(float(numbers[0]))))
       remove(1)
 
-    numbers.append(conta)
-    results.append(conta)
+    numbers.append(calculation)
+    results.append(calculation)
 
     if "?" in special_symbols:
-        refaz()
+      refaz()
     if len(identifiers) != 0:
-      armazenarVar()
-
-
-def refaz():
-  for especial in special_symbols:
-    if especial == "?":
-      numbers.append(results[-1])
+      set_variable()
 
 
 def remove(n):
@@ -81,75 +82,73 @@ def remove(n):
     numbers.pop(0)
   operators.pop(0)
 
+def refaz():
+  for especial in special_symbols:
+    if especial == "?":
+      numbers.append(results[-1])
 
-def armazenarVar():
-  for nome in identifiers:
-    if nome not in variaveis.keys():
-      variaveis[nome] = results[-1]
+def set_variable():
+  for identifier in identifiers:
+    if identifier not in variables.keys():
+      variables[identifier] = results[-1]
 
-def inicial(string):
-    stringSplitted = string.split(None, 1)[0]
-    stringSplitted = stringSplitted.strip()
-    if stringSplitted in ["?", "(", ")", ";"]:
-        novoEstado = "INICIAL"
+def set_initial_state(string):
+    splitted_string = string.split(None, 1)[0]
+    splitted_string = splitted_string.strip()
+    if splitted_string in ["?", "(", ")"]:
+        state = "INICIAL"
     else:
-        novoEstado = "ERRO"
-    return (novoEstado, stringSplitted)
+        state = "ERRO"
+    return (state, splitted_string)
 
-def numero(string):
-    stringSplitted = string.split(None, 1)[0]
-    stringSplitted = stringSplitted.strip()
-    if stringSplitted in ["1","2","3","4","5","6","7","8","9","0","."]:
-        novoEstado = "NUMERO"
+def set_number_state(string):
+    splitted_string = string.split(None, 1)[0]
+    splitted_string = splitted_string.strip()
+    if splitted_string in numbers_vocabulary:
+        state = "NUMERO"
     else:
-        novoEstado = "ERRO"
-    return (novoEstado, stringSplitted)
+        state = "ERRO"
+    return (state, splitted_string)
 
-def operation(string):
-    stringSplitted = string.split(None, 1)[0]
-    stringSplitted = stringSplitted.strip()
-    if stringSplitted in ["+","-","/","*","sin","cos","rot","exp"]:
-        novoEstado = "OPERADORES"
+def set_operator_state(string):
+    splitted_string = string.split(None, 1)[0]
+    splitted_string = splitted_string.strip()
+    if splitted_string in operators_vocabulary:
+        state = "OPERADORES"
     else:
-        novoEstado = "ERRO"
-    return (novoEstado, stringSplitted)
+        state = "ERRO"
+    return (state, splitted_string)
 
-def identifier(string):
+def set_variable_state(string):
     if len(string) > 1:
-      novoEstado = "VARIAVEL"
+      state = "VARIAVEL"
     else:
-        novoEstado = "ERRO"
-    return (novoEstado, string)
+      state = "ERRO"
+    return (state, string)
 
-
-
-
-def limpa():
+def clear():
   numbers.clear()
   tokens.clear()
   special_symbols.clear()
 
-def lerArquivo(nomeArquivo):
-    arquivo = open(nomeArquivo, "r")
-    linhas = arquivo.readlines()
-    arquivo.close()
-    return linhas
-  
+#file_reader("text1.txt")
 if __name__ == '__main__':
-    expressions = [['( op ( 1 )', '( 2 op + )']]
-
-    fsm = MaquinaEstados()
-    fsm.adicionarEstado("INICIAL", inicial, 1)
-    fsm.adicionarEstado("NUMERO", numero, 1)
-    fsm.adicionarEstado("OPERADORES", operation ,1)
-    fsm.adicionarEstado("VARIAVEL", identifier, 1)
-    fsm.setStart("INICIAL")
-    for contas in expressions:
-      for calculo in contas:
-        for caractere in calculo.split():
-          caractere = caractere.strip()
-          fsm.rodar(caractere)
-        validate_tokens(fsm.tokens)
-        fsm.tokens.clear()
+    expressions = [['( op ( 3 )', '( 2 op + )']]
+    #expressions = file_reader("text1.txt")
+    
+    final_state_machine = StateMachine()
+    final_state_machine.add_state("INICIAL", set_initial_state, 1)
+    final_state_machine.add_state("NUMERO", set_number_state, 1)
+    final_state_machine.add_state("OPERADORES", set_operator_state ,1)
+    final_state_machine.add_state("VARIAVEL", set_variable_state, 1)
+    final_state_machine.set_start("INICIAL")
+    for calculations in expressions:
+      for calculation in calculations:
+        for caracter in calculation.split():
+          caracter = caracter.strip()
+          final_state_machine.run(caracter)
+        validate_tokens(final_state_machine.tokens)
+        result_tokens = final_state_machine.tokens
+        final_state_machine.tokens.clear()
     print("Resultado: ", "%.3f" % results[-1])
-    limpa()
+    clear()

@@ -49,4 +49,6 @@ contenha erros léxicos ou sintáticos. </p>
 <p>Para a realização da validação léxica você deverá simular, em código, uma máquina de estados 
 finitos e não poderá utilizar nenhuma expressão regular.</p>    
 <p>Para  a  realização  da  validação  sintática  você  pode  usar  um  parser  LL1  ou  criar  o  seu  próprio 
-código de validação de declarações.</p>    
+código de validação de declarações.</p>
+
+<a href="https://replit.com/@JasminiSantos/Linguagens-Formais#main.py">Link para o projeto</a>

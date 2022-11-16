@@ -58,6 +58,8 @@ from string import ascii_lowercase
 alphabet = list(ascii_lowercase)
 numbers_vocabulary = ["1","2","3","4","5","6","7","8","9","0","."]
 operators_vocabulary = ["+","-","/","*","sin","cos","rot","exp"]
+end_operators = ["+","-","/","*"]
+beginning_operators = ["sin","cos","rot","exp"]
 tokens = []
 numbers = []
 operators = []
@@ -87,19 +89,21 @@ def check_identifier(identifier):
 def validate_tokens(tokens):
   for token in tokens:
     if token[0] == "NUMERO":
-      numbers.append(token[1])
+      numbers.append(float(token[1]))
+    if token[0] == "OPERADORES" and token[1] == "?":
+      special_symbols.append(token[1])
     if token[0] == "OPERADORES":
       operators.append(token[1])
-    if token[0] == "INICIAL":
-      special_symbols.append(token[1])
     if token[0] == "RESULTADO":
       results.append(token[1])
     if token[0] == "VARIAVEL":
       identifiers.append(token[1])
       if token[1] in variables:
         numbers.append(variables[token[1]])
+        '''
         if variables[token[1]] in results:
           results.remove(variables[token[1]])
+        '''
   calculate()
 
 def calculate():
@@ -109,36 +113,60 @@ def calculate():
     set_variable()
 
   for operator in operators[::-1]:
+    if operator == "?":
+      redo()
+      continue
     if operator == "+":
-      calculation = float(numbers[0]) + float(numbers[1])
-      remove(2)
+      if len(numbers) >= 2:
+        calculation = float(numbers[0]) + float(numbers[1])
+        remove(2)
+      else:
+        if "?" in special_symbols:
+          calculation = float(numbers[0]) + float(results[-1])
+          special_symbols.clear()
+          remove(1)
     elif operator == "-":
-      calculation = float(numbers[0]) - float(numbers[1])
-      remove(2)
+      if len(numbers) >= 2:
+        calculation = float(numbers[0]) - float(numbers[1])
+        remove(2)
+      else:
+        if "?" in special_symbols:
+          calculation = float(numbers[0]) - float(results[-1])
+          special_symbols.clear()
+          remove(1)
     elif operator == "*":
-      calculation = float(numbers[0]) * float(numbers[1])
-      remove(2)
+      if len(numbers) >= 2:
+        calculation = float(numbers[0]) * float(numbers[1])
+        remove(2)
+      else:
+        if "?" in special_symbols:
+          calculation = float(numbers[0]) * float(results[-1])
+          special_symbols.clear()
+          remove(1)
     elif operator == "/":
-      calculation = float(numbers[0]) / float(numbers[1])
-      remove(2)
+      if len(numbers) >= 2:
+        calculation = float(numbers[0]) / float(numbers[1])
+        remove(2)
+      else:
+        if "?" in special_symbols:
+          calculation = float(numbers[0]) / float(results[-1])
+          special_symbols.clear()
+          remove(1)
     elif operator == "exp":
       calculation = float(numbers[0])**float(numbers[1])
       remove(2)
     elif operator == "rot":
-      calculation = float(numbers[0])**(1 / float(numbers[1]))
-      remove(2)
+      calculation = math.pow(float(numbers[0]), 1/float(numbers[1]))
+      remove(2)     
     elif operator == "sin":
       calculation = math.sin(float(math.radians(float(numbers[0]))))
       remove(1)
     elif operator == "cos":
       calculation = math.cos(float(math.radians(float(numbers[0]))))
-      remove(1)
-
-    numbers.append(calculation)
+      remove(1) 
+      
     results.append(calculation)
-
-    if "?" in special_symbols:
-      redo()
+    numbers.append(calculation)
     if len(identifiers) != 0:
       set_variable()
 
@@ -149,9 +177,9 @@ def remove(n):
   operators.pop(0)
 
 def redo():
-  for special in special_symbols:
-    if special == "?":
-      numbers.append(results[-1])
+  numbers.append(results[-1])
+  operators.pop(0)
+  
 
 def set_variable():
   for identifier in identifiers:
@@ -161,8 +189,17 @@ def set_variable():
 def set_initial_state(string):
     splitted_string = string.split(None, 1)[0]
     splitted_string = splitted_string.strip()
-    if splitted_string in ["?", "(", ")"]:
+    if splitted_string in ["("]:
         state = "INICIAL"
+    else:
+        state = "ERRO"
+    return (state, splitted_string)
+
+def set_final_state(string):
+    splitted_string = string.split(None, 1)[0]
+    splitted_string = splitted_string.strip()
+    if splitted_string in [")"]:
+        state = "FINAL"
     else:
         state = "ERRO"
     return (state, splitted_string)
@@ -179,7 +216,7 @@ def set_number_state(string):
 def set_operator_state(string):
     splitted_string = string.split(None, 1)[0]
     splitted_string = splitted_string.strip()
-    if splitted_string in operators_vocabulary:
+    if splitted_string in operators_vocabulary or splitted_string == "?":
         state = "OPERADORES"
     else:
         state = "ERRO"
@@ -196,6 +233,10 @@ def clear():
   numbers.clear()
   tokens.clear()
   special_symbols.clear()
+  all_lexemes.clear()
+  variables.clear()
+  identifiers.clear()
+  results.clear()
 
 def get_lexemes(tokens):
   lexemes = []
@@ -203,38 +244,78 @@ def get_lexemes(tokens):
     lexemes.append(token[1])
   return lexemes
 
-def format_result(lexemes):
-  result_text = ""
-  for i in range(len(lexemes)):
-    result_text = "Linha", i + 1, ": lexemas: "
-    for j in range(len(lexemes[i])):
-      if j != len(lexemes[i]) - 1:
-        result_text = result_text + str(lexemes[i][j]) + ","
-      else:
-        result_text = result_text + str(lexemes[i][j]) + " todos válidos"
-    print(result_text)
-    print("Linha", i + 1, "sintaxe: correta")
-    print("Resultado: ", "%.3f" % results[i])
-        
+def format_result(expressions):
+  for i in range(len(expressions)):
+    list = []
+    if len(expressions[i]) > 0:
+      concat = "Linha "+ str(i + 1) + ": lexemas: "
+      list.append(concat)
+      list.append(", ".join(expressions[i]))
+      list.append(" todos válidos")
+      print(list[0] + list[1] + list[2])
+      print("Linha "+ str(i + 1) + ": sintaxe: correta")
+      print("Resultado: ", "%.3f" % results[i])
+    else:
+      concat = "Linha "+ str(i + 1) + ": sintaxe: incorreta "
+      print(concat)
+
+
+def split_array_of_lexemes(expression):
+  concat = "" 
+  lexemes = []
+  blank = 0
+  if expression == "":
+    return []
+  
+  if expression[0] == "(":
+    lexemes.append(expression[0])
+  else:
+    lexemes = []
+    return lexemes
+  if expression[-1] != ")":
+    lexemes = []
+    return lexemes
+  for i in range(1, len(expression)):
+    if expression[i] == ")" and concat != "":
+      lexemes.append(concat)
+      lexemes.append(expression[i])
+      concat = ""
+      continue
+    if expression[i] == " ":
+      if concat != "":
+        lexemes.append(concat)
+        concat = ""
+      blank = blank + 1
+    if blank >= 2:
+      blank = 0
+      lexemes = []
+      break
+    if expression[i] != " ":
+      blank = 0
+      concat = concat + expression[i]
+      continue
+  return lexemes
+
 def run_final_state_machine(expressions):
   final_state_machine = StateMachine()
   final_state_machine.add_state("INICIAL", set_initial_state, 1)
   final_state_machine.add_state("NUMERO", set_number_state, 1)
   final_state_machine.add_state("OPERADORES", set_operator_state ,1)
   final_state_machine.add_state("VARIAVEL", set_variable_state, 1)
+  final_state_machine.add_state("FINAL", set_final_state, 1)
   final_state_machine.set_start("INICIAL")
   for calculations in expressions:
     for calculation in calculations:
-      for caracter in calculation.split():
-        caracter = caracter.strip()
-        final_state_machine.run(caracter)
+      for character in split_array_of_lexemes(calculation):
+        character = character.strip()
+        final_state_machine.run(character)
       validate_tokens(final_state_machine.tokens)
       result_tokens = final_state_machine.tokens
+      numbers.clear()
       all_lexemes.append(get_lexemes(result_tokens))
       final_state_machine.tokens.clear()
-  #format_result(all_lexemes)
-    print("Resultado: ", "%.3f" % results[-1])
-  clear()
+    format_result(all_lexemes)
+    clear()
   
 if __name__ == '__main__':
     expressions = []
